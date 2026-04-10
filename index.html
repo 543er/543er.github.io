@@ -78,7 +78,7 @@ color:#00ff9d;
 
 <br>
 
-<input id="idlength" placeholder="Length">
+<input id="idlength" placeholder="Length (1-50)">
 <input id="customid" placeholder="Your custom ID">
 
 <br>
@@ -114,9 +114,7 @@ const chars="abcdefghijklmnopqrstuvwxyz0123456789"
 let result=""
 
 for(let i=0;i<len;i++){
-
 result+=chars[Math.floor(Math.random()*chars.length)]
-
 }
 
 return result
@@ -130,16 +128,12 @@ if(peer) peer.destroy()
 peer = peerID ? new Peer(peerID) : new Peer()
 
 peer.on("open",id=>{
-
 document.getElementById("myid").textContent=id
-
 })
 
 peer.on("connection",conn=>{
-
 connection=conn
 setupConnection()
-
 })
 
 }
@@ -147,21 +141,20 @@ setupConnection()
 function restartPeer(){
 
 let mode=idmode.value
+let len=parseInt(idlength.value)
 
 if(mode==="random"){
-
 start()
-
 }
 
 if(mode==="length"){
 
-let len=parseInt(idlength.value)
-
-if(!len||len<3) len=6
+if(!len || len<1 || len>50){
+alert("Length must be between 1 and 50")
+return
+}
 
 start(randomID(len))
-
 }
 
 if(mode==="stable"){
@@ -169,44 +162,28 @@ if(mode==="stable"){
 let id=customid.value.trim()
 
 if(id===""){
-
 alert("Enter custom ID")
 return
-
 }
 
 start(id)
-
 }
 
 if(mode==="stablelength"){
 
 let id=customid.value.trim()
-let len=parseInt(idlength.value)
 
-if(id===""){
-
-alert("Enter custom ID")
+if(!len || len<1 || len>50){
+alert("Length must be between 1 and 50")
 return
-
-}
-
-if(!len||len<3){
-
-alert("Enter valid length")
-return
-
 }
 
 if(id.length!==len){
-
 alert("ID must be exactly "+len+" characters")
 return
-
 }
 
 start(id)
-
 }
 
 }
@@ -224,15 +201,11 @@ setupConnection()
 function setupConnection(){
 
 connection.on("open",()=>{
-
 addMessage("Connected!")
-
 })
 
 connection.on("data",data=>{
-
 addMessage("Friend: "+data)
-
 })
 
 }
@@ -242,7 +215,7 @@ function sendMsg(){
 const input=document.getElementById("msg")
 const text=input.value
 
-if(!connection||text==="") return
+if(!connection || text==="") return
 
 connection.send(text)
 
