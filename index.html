@@ -3,147 +3,118 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Projekt: Informatika - Dokumentace</title>
-    <!-- Knihovna pro Peer-to-Peer spojení -->
+    <title>Workspace Docs</title>
     <script src="https://unpkg.com"></script>
     <style>
-        :root { --green: #00ff41; --bg: #0a0a0a; }
-        body { background: var(--bg); color: var(--green); font-family: 'Courier New', monospace; margin: 0; padding: 20px; display: flex; flex-direction: column; height: 90vh; }
+        :root { --bg: #ffffff; --border: #e2e8f0; --text: #1e293b; --accent: #2563eb; }
+        body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; flex-direction: column; height: 100vh; }
         
-        /* Kamuflážní záhlaví */
-        header { border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 20px; font-size: 0.8rem; opacity: 0.7; }
-        
-        #connection-area { background: #1a1a1a; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
-        #my-id { font-weight: bold; color: white; background: #333; padding: 2px 8px; }
-        
-        #chat-box { flex-grow: 1; border: 1px solid #333; overflow-y: auto; padding: 15px; background: rgba(0,0,0,0.5); margin-bottom: 10px; border-radius: 5px; }
-        .msg { margin-bottom: 8px; border-left: 2px solid var(--green); padding-left: 10px; }
-        .msg.me { border-left-color: #555; color: #aaa; }
+        header { padding: 12px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #f8fafc; font-size: 13px; }
+        .status { color: #10b981; font-weight: 600; }
 
-        .controls { display: flex; gap: 10px; }
-        input { background: #1a1a1a; border: 1px solid #333; color: white; padding: 10px; flex-grow: 1; outline: none; }
-        input:focus { border-color: var(--green); }
-        button { background: var(--green); color: black; border: none; padding: 10px 20px; cursor: pointer; font-weight: bold; text-transform: uppercase; }
-        button:hover { background: #00cc33; }
-        button.call-btn { background: #ff3333; color: white; }
-
-        #remote-video { width: 200px; position: fixed; bottom: 80px; right: 20px; border: 2px solid var(--green); background: black; display: none; }
+        main { flex: 1; display: flex; flex-direction: column; max-width: 800px; margin: 0 auto; width: 100%; padding: 20px; box-sizing: border-box; }
         
-        /* Panic Button */
-        #panic { position: fixed; top: 10px; right: 10px; font-size: 0.6rem; background: transparent; color: #333; border: 1px solid #333; padding: 5px; }
+        #conn-box { background: #f1f5f9; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid var(--border); }
+        .id-label { font-size: 11px; color: #64748b; text-transform: uppercase; margin-bottom: 5px; display: block; }
+        .my-id-val { font-family: monospace; font-weight: bold; background: #fff; padding: 4px 8px; border-radius: 4px; border: 1px solid var(--border); }
+
+        #chat { flex: 1; border: 1px solid var(--border); border-radius: 8px; overflow-y: auto; padding: 15px; background: #fff; margin-bottom: 15px; }
+        .msg { margin-bottom: 10px; font-size: 14px; }
+        .msg b { color: var(--accent); margin-right: 8px; }
+        .msg.sys { color: #94a3b8; font-style: italic; }
+
+        .input-row { display: flex; gap: 10px; }
+        input { flex: 1; padding: 10px; border: 1px solid var(--border); border-radius: 6px; outline: none; }
+        input:focus { border-color: var(--accent); }
+        button { background: var(--accent); color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 500; }
+        button:disabled { background: #cbd5e1; }
     </style>
 </head>
 <body>
 
-    <header>
-        GITHUB_PAGES // PROJECT_ID: [TVOJE_JMENO]_SECURE_COMM // STATUS: ENCRYPTED
-        <button id="panic" onclick="panic()">PANIC (ESC)</button>
-    </header>
+<header>
+    <span>Project Documentation / Shared_Notes</span>
+    <span class="status" id="status">INITIALIZING...</span>
+</header>
 
-    <div id="connection-area">
-        <p>MOJE_ID: <span id="my-id">Načítám...</span></p>
-        <div class="controls">
-            <input type="text" id="remote-id" placeholder="Vlož ID kámoše...">
-            <button onclick="connectToFriend()">PŘIPOJIT CHAT</button>
-            <button class="call-btn" onclick="startCall()">VOLAT</button>
+<main>
+    <div id="conn-box">
+        <span class="id-label">Vaše lokální ID:</span>
+        <span id="my-id" class="my-id-val">Generování...</span>
+        
+        <div class="input-row" style="margin-top: 15px;">
+            <input type="text" id="remote-id" placeholder="Vložte ID partnera...">
+            <button onclick="connect()">PŘIPOJIT</button>
         </div>
     </div>
 
-    <div id="chat-box">
-        <div class="msg">Systém inicializován... Čekám na spojení.</div>
+    <div id="chat">
+        <div class="msg sys">Systém připraven k propojení.</div>
     </div>
 
-    <div class="controls">
-        <input type="text" id="message-input" placeholder="Zadej zprávu..." onkeypress="if(event.key==='Enter') sendMessage()">
-        <button onclick="sendMessage()">ODESLAT</button>
+    <div class="input-row">
+        <input type="text" id="msg-input" placeholder="Napište zprávu..." onkeypress="if(event.key==='Enter') send()">
+        <button id="send-btn" onclick="send()">ODESLAT</button>
     </div>
+</main>
 
-    <video id="remote-video" autoplay playsinline></video>
+<script>
+    const peer = new Peer(undefined, {
+        config: { 'iceServers': [{ url: 'stun:://google.com' }] }
+    });
 
-    <script>
-        const peer = new Peer(); 
-        let conn;
+    let conn;
 
-        // 1. Vygenerování tvého ID
-        peer.on('open', (id) => {
-            document.getElementById('my-id').innerText = id;
+    peer.on('open', id => {
+        document.getElementById('my-id').innerText = id;
+        document.getElementById('status').innerText = "ONLINE (ID READY)";
+    });
+
+    // Čekání na příchozí spojení
+    peer.on('connection', c => {
+        if (conn) conn.close(); // Povolíme vždy jen jedno aktivní spojení
+        conn = c;
+        setupHandler();
+        addMsg("SYSTEM", "Uživatel se připojil.");
+    });
+
+    function connect() {
+        const rId = document.getElementById('remote-id').value;
+        if (!rId) return;
+        conn = peer.connect(rId);
+        setupHandler();
+    }
+
+    function setupHandler() {
+        conn.on('open', () => {
+            document.getElementById('status').innerText = "CONNECTED";
+            addMsg("SYSTEM", "Spojení navázáno.");
         });
-
-        // 2. Příjem chatu
-        peer.on('connection', (c) => {
-            conn = c;
-            setupChat();
-            addLog("Kámoš se připojil.");
+        conn.on('data', data => addMsg("PARTNER", data));
+        conn.on('close', () => {
+            document.getElementById('status').innerText = "DISCONNECTED";
+            addMsg("SYSTEM", "Spojení bylo ukončeno.");
         });
+    }
 
-        // 3. Příjem hovoru
-        peer.on('call', (call) => {
-            if(confirm("Někdo ti volá! Přijmout?")) {
-                navigator.mediaDevices.getUserMedia({video: false, audio: true}).then((stream) => {
-                    call.answer(stream);
-                    const video = document.getElementById('remote-video');
-                    video.style.display = "block";
-                    call.on('stream', (remoteStream) => {
-                        video.srcObject = remoteStream;
-                    });
-                });
-            }
-        });
-
-        // Funkce pro připojení k druhému
-        function connectToFriend() {
-            const id = document.getElementById('remote-id').value;
-            if(!id) return alert("Musíš zadat ID!");
-            conn = peer.connect(id);
-            setupChat();
-            addLog("Pokus o připojení k: " + id);
+    function send() {
+        const input = document.getElementById('msg-input');
+        if (conn && conn.open && input.value) {
+            conn.send(input.value);
+            addMsg("MNE", input.value);
+            input.value = "";
         }
+    }
 
-        function setupChat() {
-            conn.on('data', (data) => {
-                addLog(data, "friend");
-            });
-        }
+    function addMsg(user, text) {
+        const chat = document.getElementById('chat');
+        const div = document.createElement('div');
+        div.className = "msg" + (user === "SYSTEM" ? " sys" : "");
+        div.innerHTML = `<b>${user}:</b> ${text}`;
+        chat.appendChild(div);
+        chat.scrollTop = chat.scrollHeight;
+    }
+</script>
 
-        function sendMessage() {
-            const input = document.getElementById('message-input');
-            const msg = input.value;
-            if(conn && msg) {
-                conn.send(msg);
-                addLog(msg, "me");
-                input.value = "";
-            }
-        }
-
-        function startCall() {
-            const id = document.getElementById('remote-id').value;
-            navigator.mediaDevices.getUserMedia({video: false, audio: true}).then((stream) => {
-                const call = peer.call(id, stream);
-                const video = document.getElementById('remote-video');
-                video.style.display = "block";
-                call.on('stream', (remoteStream) => {
-                    video.srcObject = remoteStream;
-                });
-            });
-        }
-
-        function addLog(text, type) {
-            const chat = document.getElementById('chat-box');
-            const div = document.createElement('div');
-            div.className = "msg" + (type === "me" ? " me" : "");
-            div.innerHTML = `<b>${type === "me" ? "JÁ" : "KÁMOŠ"}:</b> ${text}`;
-            chat.appendChild(div);
-            chat.scrollTop = chat.scrollHeight;
-        }
-
-        // Panic Button funkce
-        function panic() {
-            window.location.href = "https://wikipedia.org";
-        }
-
-        document.addEventListener('keydown', (e) => {
-            if(e.key === "Escape") panic();
-        });
-    </script>
 </body>
 </html>
