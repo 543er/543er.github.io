@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <title>PROJECT: [TVOJE JMÉNO] PRIVATE</title>
+    <script src="https://unpkg.com"></script>
+    <style>
+        body { background: #121212; color: #00ff00; font-family: monospace; padding: 20px; }
+        #chat { height: 300px; border: 1px solid #333; overflow-y: scroll; margin-bottom: 10px; padding: 10px; }
+        input { background: #222; border: 1px solid #444; color: white; padding: 10px; width: 70%; }
+        button { background: #00ff00; color: black; border: none; padding: 10px; cursor: pointer; }
+        video { width: 300px; border: 2px solid #555; margin-top: 10px; display: block; }
+    </style>
+</head>
+<body>
+    <h1>PROJECT: [TVOJE JMÉNO]</h1>
+    <p>Tvoje ID: <span id="my-id">...generování...</span></p>
+    
+    <input type="text" id="remote-id" placeholder="Vlož ID kámoše">
+    <button onclick="connectToFriend()">Připojit k chatu</button>
+    <button onclick="startCall()">ZAVOLAT</button>
+
+    <div id="chat">--- Systém připraven ---</div>
+    <input type="text" id="message" placeholder="Napiš něco...">
+    <button onclick="sendMessage()">Odeslat</button>
+
+    <video id="remote-video" autoplay playsinline></video>
+
+    <script>
+        const peer = new Peer(); // Vytvoří tvoje unikátní ID
+        let conn;
+
+        peer.on('open', (id) => {
+            document.getElementById('my-id').innerText = id;
+        });
+
+        // PŘÍJEM CHATU
+        peer.on('connection', (c) => {
+            conn = c;
+            setupChat();
+        });
+
+        // PŘÍJEM HOVORU
+        peer.on('call', (call) => {
+            navigator.mediaDevices.getUserMedia({video: false, audio: true}).then((stream) => {
+                call.answer(stream);
+                call.on('stream', (remoteStream) => {
+                    document.getElementById('remote-video').srcObject = remoteStream;
+                });
+            });
+        });
+
+        function connectToFriend() {
+            const id = document.getElementById('remote-id').value;
+            conn = peer.connect(id);
+            setupChat();
+        }
+
+        function setupChat() {
+            conn.on('data', (data) => {
+                document.getElementById('chat').innerHTML += `<div><b>Kámoš:</b> ${data}</div>`;
+            });
+        }
+
+        function sendMessage() {
+            const msg = document.getElementById('message').value;
+            conn.send(msg);
+            document.getElementById('chat').innerHTML += `<div><b>Já:</b> ${msg}</div>`;
+            document.getElementById('message').value = "";
+        }
+
+        function startCall() {
+            const id = document.getElementById('remote-id').value;
+            navigator.mediaDevices.getUserMedia({video: false, audio: true}).then((stream) => {
+                const call = peer.call(id, stream);
+                call.on('stream', (remoteStream) => {
+                    document.getElementById('remote-video').srcObject = remoteStream;
+                });
+            });
+        }
+    </script>
+</body>
+</html>
