@@ -257,7 +257,7 @@ navigator.geolocation.getCurrentPosition(
 const lat = position.coords.latitude
 const lon = position.coords.longitude
 const mapLink = `https://google.com{lat},${lon}`
-const messageText = `Moje souřadnice: ${lat}, ${lon} | Odkaz na mapu: ${mapLink}`
+const messageText = `Moje souřadnice: ${lat}, ${lon} |
 
 connection.send(messageText)
 addMessage("Ty: " + messageText)
