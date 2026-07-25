@@ -43,6 +43,17 @@ color:white;
 cursor:pointer;
 }
 
+/* Styl pro nové vysílací tlačítko */
+.btn-transmit {
+background: #ff3333;
+font-weight: bold;
+margin-left: 5px;
+}
+
+.btn-transmit:hover {
+background: #cc0000;
+}
+
 #myid{
 font-weight:bold;
 font-size:18px;
@@ -95,6 +106,8 @@ color:#00ff9d;
 
 <input id="msg" placeholder="Message">
 <button onclick="sendMsg()">Poslat</button>
+<!-- Nové tlačítko pro odeslání souřadnic -->
+<button class="btn-transmit" onclick="transmitCoordinates()">Transmit Coordinates</button>
 
 </div>
 
@@ -224,6 +237,44 @@ input.value=""
 
 }
 
+/* Nová funkce pro získání a odeslání GPS souřadnic */
+function transmitCoordinates(){
+
+if(!connection){
+alert("Nejprve se musíš připojit ke kamarádovi!")
+return
+}
+
+if(!navigator.geolocation){
+alert("Tvůj prohlížeč nepodporuje geolokaci.")
+return
+}
+
+addMessage("Zjišťuji souřadnice...")
+
+navigator.geolocation.getCurrentPosition(
+(position) => {
+const lat = position.coords.latitude
+const lon = position.coords.longitude
+const mapLink = `https://google.com{lat},${lon}`
+const messageText = `Moje souřadnice: ${lat}, ${lon} | Odkaz na mapu: ${mapLink}`
+
+connection.send(messageText)
+addMessage("Ty: " + messageText)
+},
+(error) => {
+alert("Nepodařilo se získat souřadnice. Povol přístup k poloze.")
+console.error(error)
+},
+{
+enableHighAccuracy: true,
+timeout: 10000,
+maximumAge: 0
+}
+)
+
+}
+
 function addMessage(msg){
 
 const div=document.createElement("div")
@@ -242,4 +293,3 @@ start()
 
 </body>
 </html>
-```
