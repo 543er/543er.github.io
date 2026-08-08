@@ -5,7 +5,6 @@
 <title>Chat</title>
 
 <style>
-
 body{
 font-family:Arial;
 background:#0f0f0f;
@@ -25,6 +24,7 @@ overflow-y:auto;
 padding:10px;
 margin-top:20px;
 background:#181818;
+text-align:left; /* Opraveno pro lepší čitelnost zpráv */
 }
 
 input,select{
@@ -60,6 +60,11 @@ font-size:18px;
 color:#00ff9d;
 }
 
+/* Styl pro odkazy v chatu */
+#chat a {
+color: #00ff9d;
+text-decoration: underline;
+}
 </style>
 
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
@@ -121,20 +126,15 @@ const idlength=document.getElementById("idlength")
 const customid=document.getElementById("customid")
 
 function randomID(len){
-
 const chars="abcdefghijklmnopqrstuvwxyz0123456789"
 let result=""
-
 for(let i=0;i<len;i++){
 result+=chars[Math.floor(Math.random()*chars.length)]
 }
-
 return result
-
 }
 
 function start(peerID){
-
 if(peer) peer.destroy()
 
 peer = peerID ? new Peer(peerID) : new Peer()
@@ -148,10 +148,13 @@ connection=conn
 setupConnection()
 })
 
+peer.on("error", err => {
+alert("Chyba PeerJS: " + err.type)
+console.error(err)
+})
 }
 
 function restartPeer(){
-
 let mode=idmode.value
 let len=parseInt(idlength.value)
 
@@ -160,86 +163,71 @@ start()
 }
 
 if(mode==="length"){
-
 if(!len || len<1 || len>50){
 alert("Length must be between 1 and 50")
 return
 }
-
 start(randomID(len))
 }
 
 if(mode==="stable"){
-
 let id=customid.value.trim()
-
 if(id===""){
 alert("Enter custom ID")
 return
 }
-
 start(id)
 }
 
 if(mode==="stablelength"){
-
 let id=customid.value.trim()
-
 if(!len || len<1 || len>50){
 alert("Length must be between 1 and 50")
 return
 }
-
 if(id.length!==len){
 alert("ID must be exactly "+len+" characters")
 return
 }
-
 start(id)
 }
-
 }
 
 function connectPeer(){
-
-const id=document.getElementById("peerid").value
+const id=document.getElementById("peerid").value.trim()
+if(!id) return
 
 connection=peer.connect(id)
-
 setupConnection()
-
 }
 
 function setupConnection(){
-
 connection.on("open",()=>{
-addMessage("Connected!")
+addMessage("Systém: Připojeno!")
 })
 
 connection.on("data",data=>{
-addMessage("Kamarád: "+data)
+addMessage("Kamarád: " + data)
 })
 
+connection.on("close", ()=>{
+addMessage("Systém: Spojení bylo ukončeno.")
+})
 }
 
 function sendMsg(){
-
 const input=document.getElementById("msg")
-const text=input.value
+const text=input.value.trim()
 
 if(!connection || text==="") return
 
 connection.send(text)
-
-addMessage("Ty: "+text)
-
+addMessage("Ty: " + text)
 input.value=""
-
 }
 
 /* Nová funkce pro získání a odeslání GPS souřadnic */
 function transmitCoordinates(){
-
 if(!connection){
 alert("Nejprve se musíš připojit ke kamarádovi!")
 return
@@ -250,14 +238,14 @@ alert("Tvůj prohlížeč nepodporuje geolokaci.")
 return
 }
 
-addMessage("Zjišťuji souřadnice...")
+addMessage("Systém: Zjišťuji souřadnice...")
 
 navigator.geolocation.getCurrentPosition(
 (position) => {
 const lat = position.coords.latitude
 const lon = position.coords.longitude
 const mapLink = `https://google.com{lat},${lon}`
-const messageText = `Moje souřadnice: ${lat}, ${lon} |
+const messageText = `Moje souřadnice: ${lat}, ${lon} | Odkaz: ${mapLink}`
 
 connection.send(messageText)
 addMessage("Ty: " + messageText)
@@ -272,21 +260,26 @@ timeout: 10000,
 maximumAge: 0
 }
 )
-
 }
 
 function addMessage(msg){
-
 const div=document.createElement("div")
-div.textContent=msg
+div.style.marginBottom = "5px"
 
-document.getElementById("chat").appendChild(div)
-
-document.getElementById("chat").scrollTop=
-document.getElementById("chat").scrollHeight
-
+// Detekce URL adres a jejich převedení na klikatelné odkazy
+const urlRegex = /(https?:\/\/[^\s]+)/g
+if(urlRegex.test(msg)) {
+div.innerHTML = msg.replace(urlRegex, (url) => `<a href="${url}" target="_blank">${url}</a>`)
+} else {
+div.textContent = msg
 }
 
+const chat = document.getElementById("chat")
+chat.appendChild(div)
+chat.scrollTop = chat.scrollHeight
+}
+
+// Spuštění při načtení
 start()
 
 </script>
