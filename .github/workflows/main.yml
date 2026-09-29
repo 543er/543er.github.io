@@ -1,0 +1,32 @@
+name: Generate Directory Listing
+
+on:
+  push:
+    branches:
+      - main  # Spustí se pokaždé, když nahraješ nový soubor
+
+permissions:
+  contents: write
+
+jobs:
+  generate-listing:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Použití hotového komunitního nástroje pro generování indexu
+      - name: Generate HTML Directory Index
+        uses: jayden-f/github-pages-directory-listing@v2.0.0
+        with:
+          FOLDER: "."            # Indexuje hlavní kořenový adresář
+          EXCLUDE: "index.html README.md script.js" # Tyto soubory skryje ze seznamu
+
+      # Robot automaticky nahraje vygenerovaný web zpět do tvého repozitáře
+      - name: Deploy generated index
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@://github.com"
+          git add index.html
+          git diff-index --quiet HEAD || git commit -m "Automatický update seznamu souborů"
+          git push origin main
