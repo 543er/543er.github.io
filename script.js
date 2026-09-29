@@ -1,84 +1,58 @@
-// ========================================================
-// 🛠️ ÚDAJE PODLE TVÉHO OBRÁZKU (POZOR NA VELKÁ/MALÁ PÍSMENA):
-// ========================================================
-const GITHUB_USER = "543er"; 
-const GITHUB_REPO = "543er.github.io";           
-const FOLDER_PATH = ""; // Zůstává prázdné
-// ========================================================
+// Konfigurace tvého repozitáře (převzato z tvého obrázku)
+const USER = "543er";
+const REPO = "543er.github.io";
 
-const apiUrl = `https://github.com{GITHUB_USER}/${GITHUB_REPO}/contents/${FOLDER_PATH}`;
+// Přímá URL adresa GitHub API pro výpis souborů z hlavní složky
+const url = `https://github.com{USER}/${REPO}/contents/`;
 
-function formatBytes(bytes) {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-}
-
-async function loadFiles() {
-    const listElement = document.getElementById("file-list");
+async function getFiles() {
+    const list = document.getElementById("file-list");
     
     try {
-        const response = await fetch(apiUrl);
-        
-        // Zde odchytíme přesný typ chyby, pokud API selže
-        if (!response.ok) {
-            if (response.status === 404) {
-                throw new Error(`Chyba 404: Repozitář nebylo možné najít. Zkontroluj, zda se přesně jmenuje "${GITHUB_REPO}".`);
-            } else if (response.status === 403) {
-                throw new Error(`Chyba 403: Překročen limit požadavků GitHubu. Počkej chvíli.`);
-            } else {
-                throw new Error(`Chyba serveru: Status ${response.status}`);
-            }
-        }
+        const response = await fetch(url);
+        if (!response.ok) throw new Error("Nepodařilo se spojit s GitHubem.");
         
         const data = await response.json();
-        listElement.innerHTML = ""; 
+        list.innerHTML = ""; // Vyčistit text "Načítám..."
 
-        // Pokud je repozitář úplně prázdný (neobsahuje soubory)
-        if (!Array.isArray(data)) {
-            listElement.innerHTML = "<li>V adresáři nebyly nalezeny žádné soubory.</li>";
-            return;
-        }
+        // Seznam souborů, které nechceme na webu ukazovat
+        const ignoreList = ["index.html", "script.js", "readme.md", ".gitignore"];
 
+        // Vyfiltrování pouze povolených souborů
         const files = data.filter(item => {
-            const name = item.name.toLowerCase();
-            const isFile = item.type === "file";
-            
-            const isIndexHtml = name === "index.html";
-            const isScriptJs = name === "script.js";
-            const isGitIgnore = name === ".gitignore";
-            const isReadme = name === "readme.md";
-            
-            return isFile && !isIndexHtml && !isScriptJs && !isGitIgnore && !isReadme;
+            return item.type === "file" && !ignoreList.includes(item.name.toLowerCase());
         });
 
         if (files.length === 0) {
-            listElement.innerHTML = "<li>Do adresáře jsi zatím nenahrál žádné soubory ke stažení. Nahrávej soubory vedle index.html!</li>";
+            list.innerHTML = "<li>V adresáři zatím nejsou žádné soubory ke stažení. Nahrávej je vedle index.html!</li>";
             return;
         }
 
+        // Vykreslení odkazů na stránku
         files.forEach(file => {
             const li = document.createElement("li");
-            
             const a = document.createElement("a");
-            a.href = file.download_url; 
-            a.setAttribute("download", file.name); 
+            
+            // Stahujeme přímo z produkční adresy tvého webu, což obchází CORS chyby
+            a.href = `./${file.name}`; 
+            a.setAttribute("download", file.name);
             a.textContent = `📥 ${file.name}`;
             
             const span = document.createElement("span");
-            span.className = "size";
-            span.textContent = formatBytes(file.size);
+            span.className = "info-text";
+            span.textContent = "Kliknutím stáhneš";
             
             li.appendChild(a);
             li.appendChild(span);
-            listElement.appendChild(li);
+            list.appendChild(li);
         });
 
     } catch (error) {
-        listElement.innerHTML = `<li style="color: red; font-weight: bold; background: #fff5f5; border: 1px solid #ffc9c9;">${error.message}</li>`;
+        list.innerHTML = `<li style="color: red; font-weight: bold; background: #fff5f5; border: 1px solid #ffc9c9; padding: 12px; border-radius: 6px;">
+            Došlo k chybě: ${error.message}<br>
+            <span style="font-size: 12px; font-weight: normal; color: #666;">Tip: Ujisti se, že jsi do repozitáře nahrál i nějaký jiný soubor než index.html a script.js.</span>
+        </li>`;
     }
 }
 
-loadFiles();
+getFiles();
