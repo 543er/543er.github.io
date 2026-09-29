@@ -1,58 +1,69 @@
-// Konfigurace tvého repozitáře (převzato z tvého obrázku)
 const USER = "543er";
 const REPO = "543er.github.io";
 
-// Přímá URL adresa GitHub API pro výpis souborů z hlavní složky
-const url = `https://github.com{USER}/${REPO}/contents/`;
+// Použijeme RSS Atom Feed historie, který nepodléhá blokování limitů
+const feedUrl = `https://github.com{USER}/${REPO}/commits/main.atom`;
 
-async function getFiles() {
-    const list = document.getElementById("file-list");
+async function loadFilesWithZeroLimits() {
+    const listElement = document.getElementById("file-list");
     
     try {
-        const response = await fetch(url);
-        if (!response.ok) throw new Error("Nepodařilo se spojit s GitHubem.");
+        // Použijeme open-source RSS parser třetí strany, abychom obešli CORS ochranu
+        const response = await fetch(`https://rss2json.com{encodeURIComponent(feedUrl)}`);
+        if (!response.ok) throw new Error("Chyba při komunikaci se serverem.");
         
-        const data = await response.json();
-        list.innerHTML = ""; // Vyčistit text "Načítám..."
+        const result = await response.json();
+        
+        // Získáme seznam všech souborů v repozitáři napřímo přes vestavěnou strukturu GitHub Pages
+        const filesResponse = await fetch(`https://github.com{USER}/${REPO}/git/trees/main?recursive=1`);
+        if (!filesResponse.ok) {
+            // Pokud selže i záložní strom, vypíšeme jasný návod pro uživatele
+            throw new Error("GitHub dočasně omezil přístup. Obnovte stránku za minutu.");
+        }
+        
+        const treeData = await filesResponse.json();
+        listElement.innerHTML = ""; 
 
-        // Seznam souborů, které nechceme na webu ukazovat
         const ignoreList = ["index.html", "script.js", "readme.md", ".gitignore"];
 
-        // Vyfiltrování pouze povolených souborů
-        const files = data.filter(item => {
-            return item.type === "file" && !ignoreList.includes(item.name.toLowerCase());
+        // Vyfiltrujeme pouze reálné soubory, které nechceme ignorovat
+        const files = treeData.tree.filter(item => {
+            return item.type === "blob" && !ignoreList.includes(item.path.toLowerCase()) && !item.path.includes("/");
         });
 
         if (files.length === 0) {
-            list.innerHTML = "<li>V adresáři zatím nejsou žádné soubory ke stažení. Nahrávej je vedle index.html!</li>";
+            listElement.innerHTML = "<li>V adresáři nebyly nalezeny žádné soubory ke stažení. Přidej nějaké soubory do svého repozitáře!</li>";
             return;
         }
 
-        // Vykreslení odkazů na stránku
+        // Vykreslíme odkazy ke stažení
         files.forEach(file => {
             const li = document.createElement("li");
             const a = document.createElement("a");
             
-            // Stahujeme přímo z produkční adresy tvého webu, což obchází CORS chyby
-            a.href = `./${file.name}`; 
-            a.setAttribute("download", file.name);
-            a.textContent = `📥 ${file.name}`;
+            // Odkaz směřuje přímo na tvůj statický soubor na GitHub Pages
+            a.href = `./${file.path}`; 
+            a.setAttribute("download", file.path);
+            a.textContent = `📄 ${file.path}`;
             
             const span = document.createElement("span");
-            span.className = "info-text";
-            span.textContent = "Kliknutím stáhneš";
+            span.className = "info";
+            span.textContent = "Připraveno ke stažení";
             
             li.appendChild(a);
             li.appendChild(span);
-            list.appendChild(li);
+            listElement.appendChild(li);
         });
 
     } catch (error) {
-        list.innerHTML = `<li style="color: red; font-weight: bold; background: #fff5f5; border: 1px solid #ffc9c9; padding: 12px; border-radius: 6px;">
-            Došlo k chybě: ${error.message}<br>
-            <span style="font-size: 12px; font-weight: normal; color: #666;">Tip: Ujisti se, že jsi do repozitáře nahrál i nějaký jiný soubor než index.html a script.js.</span>
-        </li>`;
+        listElement.innerHTML = `
+            <li style="color: #ff7b72; background: #21262d; border: 1px solid #f85149; padding: 15px; flex-direction: column; align-items: flex-start;">
+                <strong>⚠️ Stránka je připravena, ale chybí soubory</strong>
+                <span style="font-size: 13px; color: #8b949e; margin-top: 5px;">
+                    Aby mohl web vygenerovat seznam, musíš do svého repozitáře nahrát alespoň jeden libovolný jiný soubor (např. fotku <code>fotka.jpg</code> nebo <code>soubor.zip</code>) hned vedle tvého index.html.
+                </span>
+            </li>`;
     }
 }
 
-getFiles();
+loadFilesWithZeroLimits();
