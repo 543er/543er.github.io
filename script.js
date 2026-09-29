@@ -1,9 +1,9 @@
 // ========================================================
-// 🛠️ ÚDAJE DOPLNĚNY AUTOMATICKY PODLE TVÉHO OBRÁZKU:
+// 🛠️ ÚDAJE PODLE TVÉHO OBRÁZKU (POZOR NA VELKÁ/MALÁ PÍSMENA):
 // ========================================================
 const GITHUB_USER = "543er"; 
 const GITHUB_REPO = "543er.github.io";           
-const FOLDER_PATH = ""; // Soubory jsou přímo v hlavním adresáři
+const FOLDER_PATH = ""; // Zůstává prázdné
 // ========================================================
 
 const apiUrl = `https://github.com{GITHUB_USER}/${GITHUB_REPO}/contents/${FOLDER_PATH}`;
@@ -21,19 +21,31 @@ async function loadFiles() {
     
     try {
         const response = await fetch(apiUrl);
+        
+        // Zde odchytíme přesný typ chyby, pokud API selže
         if (!response.ok) {
-            throw new Error(`Chyba: Zkontroluj své GitHub jméno a název repozitáře.`);
+            if (response.status === 404) {
+                throw new Error(`Chyba 404: Repozitář nebylo možné najít. Zkontroluj, zda se přesně jmenuje "${GITHUB_REPO}".`);
+            } else if (response.status === 403) {
+                throw new Error(`Chyba 403: Překročen limit požadavků GitHubu. Počkej chvíli.`);
+            } else {
+                throw new Error(`Chyba serveru: Status ${response.status}`);
+            }
         }
         
         const data = await response.json();
         listElement.innerHTML = ""; 
 
-        // Filtrování souborů v hlavním adresáři
+        // Pokud je repozitář úplně prázdný (neobsahuje soubory)
+        if (!Array.isArray(data)) {
+            listElement.innerHTML = "<li>V adresáři nebyly nalezeny žádné soubory.</li>";
+            return;
+        }
+
         const files = data.filter(item => {
             const name = item.name.toLowerCase();
             const isFile = item.type === "file";
             
-            // Ignorujeme webové soubory a README, aby se nezobrazovaly v seznamu
             const isIndexHtml = name === "index.html";
             const isScriptJs = name === "script.js";
             const isGitIgnore = name === ".gitignore";
@@ -43,7 +55,7 @@ async function loadFiles() {
         });
 
         if (files.length === 0) {
-            listElement.innerHTML = "<li>V adresáři momentálně nejsou žádné další soubory ke stažení.</li>";
+            listElement.innerHTML = "<li>Do adresáře jsi zatím nenahrál žádné soubory ke stažení. Nahrávej soubory vedle index.html!</li>";
             return;
         }
 
@@ -65,9 +77,8 @@ async function loadFiles() {
         });
 
     } catch (error) {
-        listElement.innerHTML = `<li style="color: red; font-weight: bold;">${error.message}</li>`;
+        listElement.innerHTML = `<li style="color: red; font-weight: bold; background: #fff5f5; border: 1px solid #ffc9c9;">${error.message}</li>`;
     }
 }
 
-// Spustí funkci po načtení stránky
 loadFiles();
